@@ -1,0 +1,27 @@
+{
+  "name": "soundsphere-contract",
+  "version": "0.1.0",
+  "description": "d-universe for collabrative  music creation & ownership",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Music",
+    "Social",
+    "ChainLink"
+  ],
+  "author": "tinybird",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.1"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@chainlink/contracts-ccip": "^1.2.1",
+    "@openzeppelin/contracts": "^5.0.0",
+    "contracts": "link:@chainlink/contracts",
+    "solidity-bytes-utils": "^0.8.0"
+  }
+}
