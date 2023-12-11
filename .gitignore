@@ -14,3 +14,7 @@ node_modules
 /coverage.json
 
 hardhat.config.ts
+
+.deps
+
+.DS_Store

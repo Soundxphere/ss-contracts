@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-library MusicBlocHelpers {
+library MusicBloc {
     enum State {
         Active,
         Complete,

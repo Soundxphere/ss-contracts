@@ -7,7 +7,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract SSoundSphere is OwnerIsCreator {
+contract Router is OwnerIsCreator {
     error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
     error NothingToWithdraw();
 
@@ -111,10 +111,10 @@ contract SSoundSphere is OwnerIsCreator {
         return sendMessage(1, abi.encode(params));
     }
 
-    function sendStartContribution(address blocAddress, uint256 seedBoxId)
-        external
-        returns (uint256 fees, bytes32 messageId)
-    {
+    function sendStartContribution(
+        address blocAddress,
+        uint256 seedBoxId
+    ) external returns (uint256 fees, bytes32 messageId) {
         StartContributionParams memory params = StartContributionParams({
             blocAddress: blocAddress,
             seedBoxId: seedBoxId,
@@ -124,10 +124,10 @@ contract SSoundSphere is OwnerIsCreator {
         return sendMessage(2, abi.encode(params));
     }
 
-    function sendMessage(uint8 functionSelector, bytes memory params)
-        internal
-        returns (uint256 fees, bytes32 messageId)
-    {
+    function sendMessage(
+        uint8 functionSelector,
+        bytes memory params
+    ) internal returns (uint256 fees, bytes32 messageId) {
         Client.EVM2AnyMessage memory evm2AnyMessage;
 
         if (functionSelector == 0) {
@@ -136,7 +136,7 @@ contract SSoundSphere is OwnerIsCreator {
                 data: abi.encode(functionSelector, params),
                 tokenAmounts: new Client.EVMTokenAmount[](0),
                 extraArgs: Client._argsToBytes(
-                    Client.EVMExtraArgsV1({gasLimit: 1_000_000, strict: false})
+                    Client.EVMExtraArgsV1({gasLimit: 1_000_000})
                 ),
                 feeToken: address(s_linkToken)
             });
@@ -146,7 +146,7 @@ contract SSoundSphere is OwnerIsCreator {
                 data: abi.encode(functionSelector, params),
                 tokenAmounts: new Client.EVMTokenAmount[](0),
                 extraArgs: Client._argsToBytes(
-                    Client.EVMExtraArgsV1({gasLimit: 400_000, strict: false})
+                    Client.EVMExtraArgsV1({gasLimit: 400_000})
                 ),
                 feeToken: address(s_linkToken)
             });
@@ -156,7 +156,7 @@ contract SSoundSphere is OwnerIsCreator {
                 data: abi.encode(functionSelector, params),
                 tokenAmounts: new Client.EVMTokenAmount[](0),
                 extraArgs: Client._argsToBytes(
-                    Client.EVMExtraArgsV1({gasLimit: 400_000, strict: false})
+                    Client.EVMExtraArgsV1({gasLimit: 400_000})
                 ),
                 feeToken: address(s_linkToken)
             });

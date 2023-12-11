@@ -3,15 +3,10 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import "./helpers/MusicBlocHelpers.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import {MusicBloc} from "./library/MusicBloc.sol";
 
-// import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-
-// ERC4626,
-// ERC4626,
-contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
-    using MusicBlocHelpers for MusicBlocHelpers.Seed;
+contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
     uint256 private lastSeedBoxId;
     uint256 private statusCounter;
     uint256 public currentRound;
@@ -61,8 +56,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
     }
 
     mapping(uint256 => SeedBox) public seedBoxes;
-    mapping(uint256 => mapping(bytes32 => MusicBlocHelpers.Seed))
-        public roundSeeds;
+    mapping(uint256 => mapping(bytes32 => MusicBloc.Seed)) public roundSeeds;
     mapping(uint256 => Status) public statuses;
 
     modifier onlyBlocAdmin(address sender) {
@@ -73,7 +67,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
     modifier onlyCreatorOrContributor(address _sender, uint256 _seedBoxId) {
         SeedBox storage seedBox = seedBoxes[_seedBoxId];
         require(
-            MusicBlocHelpers.isContributor(seedBox.contributors, _sender) ||
+            MusicBloc.isContributor(seedBox.contributors, _sender) ||
                 _sender == seedBox.creator,
             "Not a creator of this seedbox"
         );
@@ -126,20 +120,16 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
             "Seed invalid or already planted for this round"
         );
 
-        MusicBlocHelpers.Seed storage newSeed = roundSeeds[currentRound][
-            seedId
-        ];
+        MusicBloc.Seed storage newSeed = roundSeeds[currentRound][seedId];
         newSeed.id = seedId;
-        newSeed.state = MusicBlocHelpers.State.Active;
+        newSeed.state = MusicBloc.State.Active;
 
         newSeed.boxID = _seedBoxId;
         newSeed.seed = "";
         newSeed.merged = false;
 
         seedBox.seedsByRound[currentRound].push(seedId);
-        if (
-            !MusicBlocHelpers.contains(seedBox.participatedRounds, currentRound)
-        ) {
+        if (!MusicBloc.contains(seedBox.participatedRounds, currentRound)) {
             seedBox.participatedRounds.push(currentRound);
         }
         return (seedId, currentRound);
@@ -155,7 +145,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
         SeedBox storage seedBox = seedBoxes[_seedBoxId];
         require(seedBox.id != 0, "Seed box not found");
 
-        MusicBlocHelpers.Seed storage seed = roundSeeds[currentRound][_seedId];
+        MusicBloc.Seed storage seed = roundSeeds[currentRound][_seedId];
 
         require(seed.id != 0, "Seed not found");
 
@@ -163,7 +153,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
 
         // Update the state of the seed to completed
         seed.seed = _seed;
-        seed.state = MusicBlocHelpers.State.Complete;
+        seed.state = MusicBloc.State.Complete;
     }
 
     //Only Block Admin Can Merge Seed
@@ -173,7 +163,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
         address sender
     ) external onlyOwner onlyBlocAdmin(sender) {
         require(released == false, "Bloc is finished");
-        MusicBlocHelpers.Seed storage seed = roundSeeds[currentRound][_seedId];
+        MusicBloc.Seed storage seed = roundSeeds[currentRound][_seedId];
         require(seed.id != 0, "Seed not found");
         seed.merged = true;
         if (_release) {
@@ -191,7 +181,7 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
         SeedBox storage seedBox = seedBoxes[_seedBoxId];
         require(seedBox.id != 0, "Seed box not found");
         require(
-            MusicBlocHelpers.isContributor(seedBox.contributors, sender),
+            MusicBloc.isContributor(seedBox.contributors, sender),
             "Not a contributor"
         );
 
@@ -228,18 +218,16 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
 
     function getSeedsByRound(
         uint256 round
-    ) external view returns (MusicBlocHelpers.Seed[] memory) {
+    ) external view returns (MusicBloc.Seed[] memory) {
         uint256 seedBoxCount = lastSeedBoxId;
-        MusicBlocHelpers.Seed[] memory seeds;
+        MusicBloc.Seed[] memory seeds;
 
         for (uint256 i = 1; i <= seedBoxCount; i++) {
             bytes32[] memory seedIds = seedBoxes[i].seedsByRound[round];
 
             for (uint256 j = 0; j < seedIds.length; j++) {
-                MusicBlocHelpers.Seed memory seed = roundSeeds[round][
-                    seedIds[j]
-                ];
-                seeds = MusicBlocHelpers.appendSeed(seeds, seed);
+                MusicBloc.Seed memory seed = roundSeeds[round][seedIds[j]];
+                seeds = MusicBloc.appendSeed(seeds, seed);
             }
         }
 
@@ -284,10 +272,10 @@ contract MusicBloc is Ownable(msg.sender), Initializable, AccessControl {
         //plant completed seed to the current round
         bytes32 seedId = keccak256(abi.encodePacked(currentRound, seedBoxId));
 
-        MusicBlocHelpers.Seed storage newSeed = roundSeeds[round][seedId];
+        MusicBloc.Seed storage newSeed = roundSeeds[round][seedId];
 
         newSeed.id = seedId;
-        newSeed.state = MusicBlocHelpers.State.Complete;
+        newSeed.state = MusicBloc.State.Complete;
         newSeed.boxID = seedBoxId;
         newSeed.seed = _seed;
         newSeed.merged = true;

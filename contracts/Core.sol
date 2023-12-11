@@ -4,13 +4,13 @@ pragma solidity ^0.8.20;
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import {MusicBlocLib} from "./DeployMusicBloc.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import {SoundSphere} from "./library/SoundSphere.sol";
+import {MusicBlocLib} from "./library/BlocFactory.sol";
+import "./abstract/ENSContracts.sol";
 import "./interface/IMusicBloc.sol";
 
-contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
-    using MusicBlocLib for *;
-
+contract Core is AutomationCompatibleInterface, CCIPReceiver {
+    
     enum Operation {
         createMusicBloc,
         joinMusicBloc,
@@ -20,79 +20,20 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         merge
     }
 
-    uint256 public constant maxReleasePeriod = 30 days; //Publish your Bloc in maximum 30 Days
+    ENSRegistry public registry;
+    ENSResolver public resolver;
+    uint256 public constant maxReleasePeriod = 30 days;
     uint256 public minBlocRequirement;
     uint256 public immutable interval;
     uint256 public lastTimeStamp;
     bytes32[] public salts;
     uint256 public musicBlocsCounter;
-    IERC20 private immutable _asset;
-    // IMusicBlocFactory public blocFactory;
-
-    struct MusicBlocParams {
-        string cid;
-        uint256 seedboxCap;
-        address blocAddress;
-        address[] contributors;
-        uint256 seedBoxId;
-        bytes32 seedId;
-        string seed;
-        address sender;
-        string message;
-        bool release;
-    }
-
-    struct CreateMusicBlocParams {
-        string cid;
-        uint256 seedboxCap;
-        string seed;
-        address sender;
-    }
-
-    struct JoinMusicBlocParams {
-        address blocAddress;
-        string cid;
-        address[] contributors;
-        address sender;
-    }
-
-    struct StartContributionParams {
-        address blocAddress;
-        uint256 seedBoxId;
-        address sender;
-    }
-
-    struct CompleteSeedParams {
-        address blocAddress;
-        uint256 seedBoxId;
-        bytes32 seedId;
-        string seed;
-        address sender;
-    }
-
-    struct PostStatusParams {
-        address blocAddress;
-        uint256 seedBoxId;
-        string message;
-        address sender;
-    }
-
-    struct MergeParams {
-        address blocAddress;
-        bytes32 seedId;
-        bool release;
-        address sender;
-    }
-
-    struct InitBlocParam {
-        string seed;
-        string cid;
-        uint256 blocAmount;
-        address creator;
-    }
+    bytes32 public constant emptyNamehash = 0x00;
+    string public constant _domain = "soundsphere";
+    string public constant _topdomain = ".test";
 
     mapping(uint256 => address) public musicBlocs;
-    mapping(bytes32 => InitBlocParam) private initBlocParam;
+    mapping(bytes32 => SoundSphere.InitBlocParam) private initBlocParam;
 
     //Events
     event CreatingMusicBloc(bytes32 indexed bloc, address indexed creator);
@@ -125,15 +66,17 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         interval = updateInterval;
         lastTimeStamp = block.timestamp;
         musicBlocsCounter = 0;
+        registry = ENSRegistry(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
+        resolver = ENSResolver(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
     }
 
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
-        internal
-        override
-    {
-        (Operation operation, MusicBlocParams memory params) = decodeMessage(
-            any2EvmMessage.data
-        );
+    function _ccipReceive(
+        Client.Any2EVMMessage memory any2EvmMessage
+    ) internal override {
+        (
+            Operation operation,
+            SoundSphere.MusicBlocParams memory params
+        ) = decodeMessage(any2EvmMessage.data);
         if (operation == Operation.createMusicBloc) {
             _createMusicBloc(params);
         } else if (operation == Operation.joinMusicBloc) {
@@ -182,7 +125,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         string memory cid,
         address[] memory contributors
     ) external {
-        MusicBlocParams memory params = MusicBlocParams(
+        SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             cid,
             0,
             bloc,
@@ -199,7 +142,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
 
     // Plant a new Seed
     function startContribution(address bloc, uint256 seedBox) external {
-        MusicBlocParams memory params = MusicBlocParams(
+        SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
             0,
             bloc,
@@ -221,7 +164,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         bytes32 seedID,
         string memory seed
     ) external {
-        MusicBlocParams memory params = MusicBlocParams(
+        SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
             0,
             bloc,
@@ -242,7 +185,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         string memory message,
         uint256 seedBox
     ) external {
-        MusicBlocParams memory params = MusicBlocParams(
+        SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
             0,
             bloc,
@@ -257,12 +200,8 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         _postStatus(params);
     }
 
-    function merge(
-        address bloc,
-        bytes32 seedID,
-        bool release
-    ) internal {
-        MusicBlocParams memory params = MusicBlocParams(
+    function merge(address bloc, bytes32 seedID, bool release) internal {
+        SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
             0,
             bloc,
@@ -277,22 +216,27 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         _merge(params);
     }
 
-    function _createMusicBloc(MusicBlocParams memory params) internal {
+    function _createMusicBloc(
+        SoundSphere.MusicBlocParams memory params
+    ) internal {
         bytes32 salt = keccak256(
             abi.encodePacked(params.cid, ++musicBlocsCounter)
         );
         salts.push(salt);
-        InitBlocParam memory _initParams = InitBlocParam(
-            params.seed,
-            params.cid,
-            params.seedboxCap,
-            params.sender
-        );
+        SoundSphere.InitBlocParam memory _initParams = SoundSphere
+            .InitBlocParam(
+                params.seed,
+                params.cid,
+                params.seedboxCap,
+                params.sender
+            );
         initBlocParam[salt] = _initParams;
         emit CreatingMusicBloc(salt, params.sender);
     }
 
-    function _joinMusicBloc(MusicBlocParams memory params) internal {
+    function _joinMusicBloc(
+        SoundSphere.MusicBlocParams memory params
+    ) internal {
         IMusicBloc musicBloc = IMusicBloc(params.blocAddress);
         uint256 seedBoxId = musicBloc.createSeedBox(
             params.cid,
@@ -302,7 +246,9 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         emit JoinedMusicBloc(params.blocAddress, seedBoxId, params.sender);
     }
 
-    function _startContribution(MusicBlocParams memory params) internal {
+    function _startContribution(
+        SoundSphere.MusicBlocParams memory params
+    ) internal {
         IMusicBloc musicBloc = IMusicBloc(params.blocAddress);
         (bytes32 seedId, uint256 currentRound) = musicBloc.plantSeed(
             params.seedBoxId,
@@ -311,7 +257,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         emit NewSeedStarted(params.blocAddress, seedId, currentRound);
     }
 
-    function _completeSeed(MusicBlocParams memory params) internal {
+    function _completeSeed(SoundSphere.MusicBlocParams memory params) internal {
         IMusicBloc musicBloc = IMusicBloc(params.blocAddress);
         musicBloc.completeSeed(
             params.seedBoxId,
@@ -322,13 +268,13 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         emit SeedCompleted(params.blocAddress, params.seedId);
     }
 
-    function _postStatus(MusicBlocParams memory params) internal {
+    function _postStatus(SoundSphere.MusicBlocParams memory params) internal {
         IMusicBloc musicBloc = IMusicBloc(params.blocAddress);
         musicBloc.postStatus(params.seedBoxId, params.message, params.sender);
         emit StatusPosted(params.blocAddress, params.message, params.sender);
     }
 
-    function _merge(MusicBlocParams memory params) internal {
+    function _merge(SoundSphere.MusicBlocParams memory params) internal {
         IMusicBloc musicBloc = IMusicBloc(params.blocAddress);
         // uint256 seedBoxID = musicBloc.getBoxIdBySeedId(params.seedId);
         musicBloc.mergeSeed(params.seedId, params.release, params.sender);
@@ -341,10 +287,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         external
         view
         override
-        returns (
-            bool upkeepNeeded,
-            bytes memory /* performData */
-        )
+        returns (bool upkeepNeeded, bytes memory /* performData */)
     {
         upkeepNeeded =
             (block.timestamp - lastTimeStamp) > interval &&
@@ -352,9 +295,7 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         // We don't use the checkData in this example. The checkData is defined when the Upkeep was registered.
     }
 
-    function performUpkeep(
-        bytes calldata /* performData */
-    ) external override {
+    function performUpkeep(bytes calldata /* performData */) external override {
         if ((block.timestamp - lastTimeStamp) > interval && salts.length > 0) {
             // Create a new array to store salts that you want to keep
             bytes32[] memory remainingSalts = new bytes32[](salts.length);
@@ -363,12 +304,10 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 //deploy musicBloc
 
                 address musicBloc = deployMusicBloc(salts[i]);
-                InitBlocParam storage params = initBlocParam[salts[i]];
+                SoundSphere.InitBlocParam storage params = initBlocParam[
+                    salts[i]
+                ];
 
-                //approve Bloc to transfer amount from  vault
-                // _asset.approve(musicBloc, params.blocAmount);
-
-                //init Bloc
                 IMusicBloc(musicBloc).initialize(
                     params.creator,
                     params.cid,
@@ -379,21 +318,19 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
 
                 musicBlocs[musicBlocsCounter] = musicBloc;
                 emit NewMusicBloc(musicBloc, params.creator);
-
-                // Don't remove the salt in the loop, just copy it to the new array
                 remainingSalts[i] = salts[i];
             }
-
-            // Update the original salts array with the new empty array
             salts = new bytes32[](0);
             lastTimeStamp = block.timestamp;
         }
     }
 
-    function decodeMessage(bytes memory data)
+    function decodeMessage(
+        bytes memory data
+    )
         internal
         pure
-        returns (Operation operation, MusicBlocParams memory params)
+        returns (Operation operation, SoundSphere.MusicBlocParams memory params)
     {
         (uint8 functionSelector, bytes memory remainingData) = abi.decode(
             data,
@@ -403,12 +340,12 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         operation = Operation(functionSelector);
 
         if (operation == Operation.createMusicBloc) {
-            CreateMusicBlocParams memory createParams = abi.decode(
+            SoundSphere.CreateMusicBlocParams memory createParams = abi.decode(
                 remainingData,
-                (CreateMusicBlocParams)
+                (SoundSphere.CreateMusicBlocParams)
             );
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 createParams.cid,
                 createParams.seedboxCap,
                 address(0),
@@ -421,12 +358,12 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 false
             );
         } else if (operation == Operation.joinMusicBloc) {
-            JoinMusicBlocParams memory joinParams = abi.decode(
+            SoundSphere.JoinMusicBlocParams memory joinParams = abi.decode(
                 remainingData,
-                (JoinMusicBlocParams)
+                (SoundSphere.JoinMusicBlocParams)
             );
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 joinParams.cid,
                 0,
                 joinParams.blocAddress,
@@ -439,12 +376,12 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 false
             );
         } else if (operation == Operation.startContribution) {
-            StartContributionParams memory startParams = abi.decode(
+            SoundSphere.StartContributionParams memory startParams = abi.decode(
                 remainingData,
-                (StartContributionParams)
+                (SoundSphere.StartContributionParams)
             );
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 "",
                 0,
                 startParams.blocAddress,
@@ -457,12 +394,10 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 false
             );
         } else if (operation == Operation.completeSeed) {
-            CompleteSeedParams memory completeSeedParams = abi.decode(
-                remainingData,
-                (CompleteSeedParams)
-            );
+            SoundSphere.CompleteSeedParams memory completeSeedParams = abi
+                .decode(remainingData, (SoundSphere.CompleteSeedParams));
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 "",
                 0,
                 completeSeedParams.blocAddress,
@@ -475,12 +410,12 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 false
             );
         } else if (operation == Operation.postStatus) {
-            PostStatusParams memory postStatusParams = abi.decode(
+            SoundSphere.PostStatusParams memory postStatusParams = abi.decode(
                 remainingData,
-                (PostStatusParams)
+                (SoundSphere.PostStatusParams)
             );
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 "",
                 0,
                 postStatusParams.blocAddress,
@@ -493,12 +428,12 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
                 false
             );
         } else if (operation == Operation.merge) {
-            MergeParams memory mergeParams = abi.decode(
+            SoundSphere.MergeParams memory mergeParams = abi.decode(
                 remainingData,
-                (MergeParams)
+                (SoundSphere.MergeParams)
             );
 
-            params = MusicBlocParams(
+            params = SoundSphere.MusicBlocParams(
                 "",
                 0,
                 mergeParams.blocAddress,
@@ -521,5 +456,47 @@ contract SoundSphereCore is AutomationCompatibleInterface, CCIPReceiver {
         address newMusicBloc = MusicBlocLib.deployMusicBloc(salt);
         return newMusicBloc;
     }
+
+    function registerSubdomain(
+        string memory _subdomain,
+        address _owner,
+        address _target
+    ) public {
+        bytes32 topdomainNamehash = keccak256(
+            abi.encodePacked(
+                emptyNamehash,
+                keccak256(abi.encodePacked(_topdomain))
+            )
+        );
+        bytes32 domainNamehash = keccak256(
+            abi.encodePacked(
+                topdomainNamehash,
+                keccak256(abi.encodePacked(_domain))
+            )
+        );
+
+        require(
+            registry.owner(domainNamehash) == address(this),
+            "this contract should own the domain"
+        );
+
+        bytes32 subdomainLabelhash = keccak256(abi.encodePacked(_subdomain));
+
+        bytes32 subdomainNamehash = keccak256(
+            abi.encodePacked(domainNamehash, subdomainLabelhash)
+        );
+
+        require(
+            registry.owner(subdomainNamehash) == address(0),
+            "sub domain already owned"
+        );
+
+        registry.setSubnodeOwner(
+            domainNamehash,
+            subdomainLabelhash,
+            address(this)
+        );
+        registry.setResolver(subdomainNamehash, address(resolver));
+        resolver.setAddr(subdomainNamehash, _target);
+    }
 }
-// 0xF10F9Cd0dc03b6335629FdE7beEdE708F18eD58A
