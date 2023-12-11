@@ -24,7 +24,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         string cid;
         uint256[] participatedRounds;
         address[] contributors;
-        uint256 totalShares;
         address creator;
         mapping(uint256 => bytes32[]) seedsByRound;
     }
@@ -33,7 +32,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         uint256 id;
         string cid;
         address[] contributors;
-        uint256 totalShares;
         uint256[] participatedRounds;
         address creator;
     }
@@ -70,6 +68,9 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         );
         _;
     }
+
+
+
 
     function initialize(
         address admin,
@@ -202,8 +203,8 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         for (uint256 i = 0; i < lastSeedBoxId; i++) {
             SeedBox storage seedBox = seedBoxes[i];
             seedBoxesList[i].id = seedBox.id;
+            seedBoxesList[i].cid = seedBox.cid;
             seedBoxesList[i].contributors = seedBox.contributors;
-            seedBoxesList[i].totalShares = seedBox.totalShares;
             seedBoxesList[i].participatedRounds = seedBox.participatedRounds;
         }
 
@@ -237,10 +238,9 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         string memory _cid,
         string memory _seed
     ) internal {
-        require(currentRound == 0, "Bloc initialized already");
-        currentRound = 0;
         uint256 seedBoxId = ++lastSeedBoxId;
         uint256 round = currentRound;
+
         //create owners box
         SeedBox storage seedBox = seedBoxes[seedBoxId];
         seedBox.id = seedBoxId;
@@ -248,8 +248,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         seedBox.contributors = new address[](0);
         seedBox.contributors.push(_admin);
         seedBox.creator = _admin;
-
-        seedBox.totalShares = 100;
 
         bytes32 MANAGER_ROLE = keccak256(abi.encodePacked(address(this)));
         bytes32 ADMIN_ROLE = keccak256(

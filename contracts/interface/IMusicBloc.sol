@@ -12,6 +12,8 @@ interface IMusicBloc {
         uint256 blocAmount
     ) external;
 
+
+
     function initialize(
         address _admin,
         string memory _cid,

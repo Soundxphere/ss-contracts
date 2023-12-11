@@ -21,14 +21,12 @@ contract Router is OwnerIsCreator {
         address _router,
         address _link,
         address _receiver,
-        // address _sstToken,
         uint64 _destinationChain
     ) {
         s_router = IRouterClient(_router);
         s_linkToken = LinkTokenInterface(_link);
         s_receiver = _receiver;
         s_destinationChainSelector = _destinationChain;
-        // sst_token = _sstToken;
         transferOwnership(_receiver);
     }
 

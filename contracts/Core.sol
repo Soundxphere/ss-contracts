@@ -5,7 +5,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {SoundSphere} from "./library/SoundSphere.sol";
-import {MusicBlocLib} from "./library/BlocFactory.sol";
+import {MusicBlocLib} from "./BlocFactory.sol";
 import "./abstract/ENSContracts.sol";
 import "./interface/IMusicBloc.sol";
 
@@ -20,6 +20,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     }
 
     ENSRegistry public registry;
+    ENSResolver public resolver;
     bytes32 public constant emptyNamehash = 0x00;
     string public constant _domain = "soundhere";
     string public constant _topdomain = ".test";
@@ -60,6 +61,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
         lastTimeStamp = block.timestamp;
         musicBlocsCounter = 0;
         registry = ENSRegistry(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
+        resolver = ENSResolver(0x8FADE66B79cC9f707aB26799354482EB93a5B7dD);
     }
 
     function _ccipReceive(
@@ -479,9 +481,8 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
             subdomainLabelhash,
             address(this)
         );
+        registry.setResolver(subdomainNamehash, address(resolver));
+        resolver.setAddr(subdomainNamehash, _target);
+        registry.setOwner(subdomainNamehash, address(this));
     }
-
-    
 }
-
-

@@ -3,7 +3,6 @@ import { ethers } from "hardhat";
 async function main() {
   const Core: any = await ethers.deployContract("Core", [
     "0x0bf3de8c5d3e8a2b34d2beeb17abfcebaf363a59", //ChainLink Router
-    1, //Min of 1
     60, //60 Secs Interval
   ]);
 

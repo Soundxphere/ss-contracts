@@ -657,7 +657,7 @@
 			"bytecodeHash": "ipfs"
 		},
 		"optimizer": {
-			"enabled": false,
+			"enabled": true,
 			"runs": 200
 		},
 		"remappings": []
@@ -784,19 +784,27 @@
 			]
 		},
 		"Bloc.sol": {
-			"keccak256": "0x7dd0c22bab18ad75cec400a5f08d7a26b71d1febcfe8d545909827d5630e06d0",
+			"keccak256": "0x94dc8c960f79b145ea4e52eace218ee0ae6495e8e225bfaba9c6687a3682b4c3",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1998d07b3b535306bd3c17e0dac4999055bb8ec0b6304d61b22e47276bc92e33",
-				"dweb:/ipfs/QmcZdCpsjoXjQdw8TCKYZxfxGPdXGbA8jJmYvQAwn4cYXE"
+				"bzz-raw://47f74e8e5b3012c00bbff7593c11c417c08fb65036d4421918c0cb50ac89f997",
+				"dweb:/ipfs/QmPFBNXNF7aJBswL3kSwYuEpYkguSbEv4PmZ5grNYZRvip"
+			]
+		},
+		"BlocFactory.sol": {
+			"keccak256": "0xdec00fb51f811f0660171d7a080edc1c462b20d75e48c30fbae48fd76cd51f00",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://bfa19685a03dd5c345d74aae8c0dd33937692d607585fabf2344bde4c14418c2",
+				"dweb:/ipfs/QmbL6aEkeimn9z1rx31sSy4edbhwdvBQcXXTx9VjedH1g5"
 			]
 		},
 		"Core.sol": {
-			"keccak256": "0xbe5e40396b85c256585548d4afc9d91ee733abf05edc3f9e4d950f5f12d8084e",
+			"keccak256": "0x17ae274392ec206c9872e679ae0b76c84f79b420f3a96d786db6917a205bb323",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://9bc03196aacddfdbdce66633e680fa05b7a58a580f27f806ee53b3201c02583b",
-				"dweb:/ipfs/QmeWZdtXqq4Zfh8QxnCugRuP7xqr4v14P4nVernDEStDos"
+				"bzz-raw://180e1bd391152a3bca6cdb7c3d2993d6bd36b0a91915fbae4a8e594b58765c73",
+				"dweb:/ipfs/QmRXJTRRQtVEi7NYWhLv6oZkHrg3jJ6ynSsz45t66jNDum"
 			]
 		},
 		"abstract/ENSContracts.sol": {
@@ -808,19 +816,11 @@
 			]
 		},
 		"interface/IMusicBloc.sol": {
-			"keccak256": "0xe2795a65ef0407613f10d71f92ac05cdd0c15a1898628e7f7f482eb0e5374c27",
+			"keccak256": "0x05ffb570c73e6e6c1d4e4a989f32a9350559525db72398d38ff9d79fce03a5b9",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://e06603c1e3eddb5ea45bfa1eecff1c26759837a9214479cec9db3a5023c4252d",
-				"dweb:/ipfs/QmfTKVG9xWfwgANrnDpqPwCDzcKUTsvFnmB8719xf6k55g"
-			]
-		},
-		"library/BlocFactory.sol": {
-			"keccak256": "0x190b42d790d3c8ecc7c608f2610036b8eb8db5be09785a4cb1c0a7b6627832b7",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://2f43df7f90d3191ede7f50ec70a44653a3dc819fb33d4c41d6fd55a3f64f0784",
-				"dweb:/ipfs/QmPAebYZDW737FfUCf7ZKpT6hcLj1hSVHRofjyNtAJg1y2"
+				"bzz-raw://a6b9f6bda035a93dfbeb41cc35626f651dd0103c8c886ab2cf6c3a1373fedfa8",
+				"dweb:/ipfs/QmV5mTnXbJsKcunbzCViaq64GcyEByjB4Yk51QZpHRUjdB"
 			]
 		},
 		"library/MusicBloc.sol": {
