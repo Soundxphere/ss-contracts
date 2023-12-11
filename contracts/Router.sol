@@ -34,7 +34,7 @@ contract Router is OwnerIsCreator {
 
     struct CreateMusicBlocParams {
         string cid;
-        uint256 seedboxCap;
+        string name;
         string seed;
         address sender;
     }
@@ -82,14 +82,14 @@ contract Router is OwnerIsCreator {
     }
 
     function sendCreateMusicBloc(
-        string memory cid,
-        uint256 seedboxCap,
-        string memory seed
+        string memory _cid,
+        string memory _name,
+        string memory _seed
     ) external returns (uint256 fees, bytes32 messageId) {
         CreateMusicBlocParams memory params = CreateMusicBlocParams({
-            cid: cid,
-            seedboxCap: seedboxCap,
-            seed: seed,
+            cid: _cid,
+            name: _name,
+            seed: _seed,
             sender: msg.sender
         });
 

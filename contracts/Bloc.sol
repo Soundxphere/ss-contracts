@@ -10,11 +10,8 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
     uint256 private lastSeedBoxId;
     uint256 private statusCounter;
     uint256 public currentRound;
-    uint256 public initStake;
     string public cid;
     bool public released;
-    uint256 public rewardsApplicable;
-    uint256 public constant releasePeriod = 30 days;
 
     enum State {
         Active,
@@ -77,12 +74,10 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
     function initialize(
         address admin,
         string memory _cid,
-        uint256 _initStake,
         address soundSphereAddress,
         string memory seed
     ) public initializer {
-        _initBloc(admin, _cid, _initStake, seed);
-        rewardsApplicable = block.timestamp + releasePeriod;
+        _initBloc(admin, _cid, seed);
         transferOwnership(soundSphereAddress);
     }
 
@@ -91,7 +86,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         address[] memory _contributors,
         address creator
     ) external onlyOwner returns (uint256) {
-        require(released == false, "Bloc is finished");
         uint256 seedBoxId = ++lastSeedBoxId;
         SeedBox storage newSeedBox = seedBoxes[seedBoxId];
         newSeedBox.id = seedBoxId;
@@ -198,9 +192,9 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
     function getBlocMetadata()
         external
         view
-        returns (string memory, bool, uint256, uint256)
+        returns (string memory, bool, uint256)
     {
-        return (cid, released, currentRound, initStake);
+        return (cid, released, currentRound);
     }
 
     function getAllSeedBoxes() external view returns (SeedBoxInfo[] memory) {
@@ -241,7 +235,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
     function _initBloc(
         address _admin,
         string memory _cid,
-        uint256 _initStake,
         string memory _seed
     ) internal {
         require(currentRound == 0, "Bloc initialized already");
@@ -283,7 +276,6 @@ contract Bloc is Ownable(msg.sender), Initializable, AccessControl {
         seedBox.seedsByRound[round].push(seedId);
         seedBox.participatedRounds.push(round);
         cid = _cid;
-        initStake = _initStake;
         released = false;
         currentRound++;
     }

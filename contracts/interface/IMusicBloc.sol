@@ -15,7 +15,6 @@ interface IMusicBloc {
     function initialize(
         address _admin,
         string memory _cid,
-        uint256 _maxStakeRequirement,
         address soundSphereAddress,
         string memory seed
     ) external;
@@ -26,9 +25,10 @@ interface IMusicBloc {
         address creator
     ) external returns (uint256);
 
-    function plantSeed(uint256 _seedBoxId, address sender)
-        external
-        returns (bytes32, uint256);
+    function plantSeed(
+        uint256 _seedBoxId,
+        address sender
+    ) external returns (bytes32, uint256);
 
     function completeSeed(
         uint256 _seedBoxId,
@@ -37,11 +37,7 @@ interface IMusicBloc {
         address sender
     ) external;
 
-    function mergeSeed(
-        bytes32 _seedId,
-        bool _release,
-        address sender
-    ) external;
+    function mergeSeed(bytes32 _seedId, bool _release, address sender) external;
 
     function postStatus(
         uint256 _seedBoxId,
@@ -52,19 +48,13 @@ interface IMusicBloc {
     function getBlocMetadata()
         external
         view
-        returns (
-            string memory,
-            bool,
-            uint256,
-            uint256
-        );
+        returns (string memory, bool, uint256, uint256);
 
     function getAllSeedBoxes() external view returns (uint256[] memory);
 
-    function getSeedsByRound(uint256 _round)
-        external
-        view
-        returns (bytes32[] memory);
+    function getSeedsByRound(
+        uint256 _round
+    ) external view returns (bytes32[] memory);
 
     function getBoxIdBySeedId(bytes32 _seedId) external returns (uint256);
 }

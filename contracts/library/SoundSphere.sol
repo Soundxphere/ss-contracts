@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-
-
 library SoundSphere {
     struct MusicBlocParams {
         string cid;
-        uint256 seedboxCap;
+        string name;
         address blocAddress;
         address[] contributors;
         uint256 seedBoxId;
@@ -19,7 +17,7 @@ library SoundSphere {
 
     struct CreateMusicBlocParams {
         string cid;
-        uint256 seedboxCap;
+        string name;
         string seed;
         address sender;
     }
@@ -62,7 +60,7 @@ library SoundSphere {
     struct InitBlocParam {
         string seed;
         string cid;
-        uint256 blocAmount;
+        string name;
         address creator;
     }
 }

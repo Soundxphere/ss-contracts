@@ -10,7 +10,6 @@ import "./abstract/ENSContracts.sol";
 import "./interface/IMusicBloc.sol";
 
 contract Core is AutomationCompatibleInterface, CCIPReceiver {
-    
     enum Operation {
         createMusicBloc,
         joinMusicBloc,
@@ -21,16 +20,15 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     }
 
     ENSRegistry public registry;
-    ENSResolver public resolver;
-    uint256 public constant maxReleasePeriod = 30 days;
-    uint256 public minBlocRequirement;
+    bytes32 public constant emptyNamehash = 0x00;
+    string public constant _domain = "soundhere";
+    string public constant _topdomain = ".test";
+
     uint256 public immutable interval;
     uint256 public lastTimeStamp;
+
     bytes32[] public salts;
     uint256 public musicBlocsCounter;
-    bytes32 public constant emptyNamehash = 0x00;
-    string public constant _domain = "soundsphere";
-    string public constant _topdomain = ".test";
 
     mapping(uint256 => address) public musicBlocs;
     mapping(bytes32 => SoundSphere.InitBlocParam) private initBlocParam;
@@ -57,17 +55,11 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     );
     event Merged(address indexed bloc, bytes32 indexed seedId);
 
-    constructor(
-        address router,
-        uint256 _minBlocRequirement,
-        uint256 updateInterval
-    ) CCIPReceiver(router) {
-        minBlocRequirement = _minBlocRequirement;
+    constructor(address router, uint256 updateInterval) CCIPReceiver(router) {
         interval = updateInterval;
         lastTimeStamp = block.timestamp;
         musicBlocsCounter = 0;
         registry = ENSRegistry(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
-        resolver = ENSResolver(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
     }
 
     function _ccipReceive(
@@ -97,25 +89,23 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     //Deploy new MusicBloc Contract
     function createMusicBloc(
         string memory cid,
-        string memory seed,
-        uint256 blocAmount //use this as staking amount
+        string memory name,
+        string memory seed
     ) external {
-        require(
-            blocAmount >= minBlocRequirement,
-            "Staking amount is less than the required minimum"
-        );
-
         bytes32 salt = keccak256(abi.encodePacked(cid, ++musicBlocsCounter));
 
-        address newMusicBloc = deployMusicBloc(salt);
+        address newMusicBloc = _deployMusicBloc(salt);
         IMusicBloc(newMusicBloc).initialize(
             msg.sender,
             cid,
-            blocAmount,
             address(this),
             seed
         );
         musicBlocs[musicBlocsCounter] = newMusicBloc;
+
+        //deploy ENS Name
+        // _registerSubdomain(name, newMusicBloc);
+
         emit NewMusicBloc(newMusicBloc, msg.sender);
     }
 
@@ -127,7 +117,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     ) external {
         SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             cid,
-            0,
+            "",
             bloc,
             contributors,
             0,
@@ -144,7 +134,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     function startContribution(address bloc, uint256 seedBox) external {
         SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
-            0,
+            "",
             bloc,
             new address[](0),
             seedBox,
@@ -166,7 +156,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     ) external {
         SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
-            0,
+            "",
             bloc,
             new address[](0),
             seedBox,
@@ -187,7 +177,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     ) external {
         SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
-            0,
+            "",
             bloc,
             new address[](0),
             seedBox,
@@ -203,7 +193,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
     function merge(address bloc, bytes32 seedID, bool release) internal {
         SoundSphere.MusicBlocParams memory params = SoundSphere.MusicBlocParams(
             "",
-            0,
+            "",
             bloc,
             new address[](0),
             0,
@@ -224,12 +214,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
         );
         salts.push(salt);
         SoundSphere.InitBlocParam memory _initParams = SoundSphere
-            .InitBlocParam(
-                params.seed,
-                params.cid,
-                params.seedboxCap,
-                params.sender
-            );
+            .InitBlocParam(params.seed, params.cid, params.name, params.sender);
         initBlocParam[salt] = _initParams;
         emit CreatingMusicBloc(salt, params.sender);
     }
@@ -303,7 +288,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
             for (uint256 i = 0; i < salts.length; i++) {
                 //deploy musicBloc
 
-                address musicBloc = deployMusicBloc(salts[i]);
+                address musicBloc = _deployMusicBloc(salts[i]);
                 SoundSphere.InitBlocParam storage params = initBlocParam[
                     salts[i]
                 ];
@@ -311,7 +296,6 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
                 IMusicBloc(musicBloc).initialize(
                     params.creator,
                     params.cid,
-                    params.blocAmount,
                     address(this), //set soundsphere as owner
                     params.seed
                 );
@@ -347,7 +331,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 createParams.cid,
-                createParams.seedboxCap,
+                createParams.name,
                 address(0),
                 new address[](0),
                 0,
@@ -365,7 +349,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 joinParams.cid,
-                0,
+                "",
                 joinParams.blocAddress,
                 joinParams.contributors,
                 0,
@@ -383,7 +367,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 "",
-                0,
+                "",
                 startParams.blocAddress,
                 new address[](0),
                 startParams.seedBoxId,
@@ -399,7 +383,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 "",
-                0,
+                "",
                 completeSeedParams.blocAddress,
                 new address[](0),
                 completeSeedParams.seedBoxId,
@@ -417,7 +401,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 "",
-                0,
+                "",
                 postStatusParams.blocAddress,
                 new address[](0),
                 postStatusParams.seedBoxId,
@@ -435,7 +419,7 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
 
             params = SoundSphere.MusicBlocParams(
                 "",
-                0,
+                "",
                 mergeParams.blocAddress,
                 new address[](0),
                 0,
@@ -452,16 +436,15 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
         return (operation, params);
     }
 
-    function deployMusicBloc(bytes32 salt) internal returns (address) {
+    function _deployMusicBloc(bytes32 salt) internal returns (address) {
         address newMusicBloc = MusicBlocLib.deployMusicBloc(salt);
         return newMusicBloc;
     }
 
-    function registerSubdomain(
+    function _registerSubdomain(
         string memory _subdomain,
-        address _owner,
         address _target
-    ) public {
+    ) internal {
         bytes32 topdomainNamehash = keccak256(
             abi.encodePacked(
                 emptyNamehash,
@@ -496,7 +479,9 @@ contract Core is AutomationCompatibleInterface, CCIPReceiver {
             subdomainLabelhash,
             address(this)
         );
-        registry.setResolver(subdomainNamehash, address(resolver));
-        resolver.setAddr(subdomainNamehash, _target);
     }
+
+    
 }
+
+
