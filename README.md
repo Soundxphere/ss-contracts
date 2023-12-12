@@ -9,7 +9,7 @@ Soundsphere is a convergence of distinct seeds planted on blocs by ecosystem cre
 | Chain   | Core Contract                                    | Sender Contract                                  |
 | ------- | ------------------------------------------------ | ------------------------------------------------ |
 | Sepolia | [`0x48E2c7E6e2bb2F0983bA56C8F66a8A553ac8Cc09`]() | [`0x48E2c7E6e2bb2F0983bA56C8F66a8A553ac8Cc09`]() |
-| Fuji    | ❌                                               |                                                  |
+| Fuji    | ❌                                               | [`0xDfA982cB1A5bDa0ad62dFfd416bABBfab02D6ba8`]() |
 | Mumbai  | ❌                                               | [`0x3af06a265fD1ED7d68B5b24f2674b4C4f8782319`]() |
 
 ## ChainLink References
